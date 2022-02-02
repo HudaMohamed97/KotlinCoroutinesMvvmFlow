@@ -1,0 +1,75 @@
+package com.example.kotlincoroutinesmvvmflow
+
+import android.os.Bundle
+import android.view.View
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.kotlincoroutinesmvvmflow.model.User
+import com.example.kotlincoroutinesmvvmflow.network.RetrofitConfig
+import com.example.kotlincoroutinesmvvmflow.utils.ApiHelper
+import com.example.kotlincoroutinesmvvmflow.utils.Status
+import kotlinx.android.synthetic.main.activity_main.*
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var viewModel: MainViewModel
+    private lateinit var adapter: MainAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        setupViewModel()
+        setupUI()
+        setupObservers()
+    }
+
+
+    private fun setupViewModel() {
+        viewModel = ViewModelProviders.of(
+            this, ViewModelFactory(ApiHelper(RetrofitConfig.API_SERVICE) )
+        )
+            .get(MainViewModel::class.java)
+    }
+
+    private fun setupUI() {
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = MainAdapter(arrayListOf())
+        recyclerView.addItemDecoration(
+            DividerItemDecoration(
+                recyclerView.context,
+                (recyclerView.layoutManager as LinearLayoutManager).orientation
+            )
+        )
+        recyclerView.adapter = adapter
+    }
+
+    private fun setupObservers() {
+        viewModel.getUsers().observe(this, {
+            it?.let { resource ->
+                when (resource.status) {
+                    Status.SUCCESS -> {
+                        recyclerView.visibility = View.VISIBLE
+                        progressBar.visibility = View.GONE
+                        resource.data?.let { users -> retrieveList(users) }
+                    }
+                    Status.ERROR -> {
+                        recyclerView.visibility = View.VISIBLE
+                        progressBar.visibility = View.GONE
+                    }
+                    Status.LOADING -> {
+                        progressBar.visibility = View.VISIBLE
+                        recyclerView.visibility = View.GONE
+                    }
+                }
+            }
+        })
+    }
+
+    private fun retrieveList(users: List<User>) {
+        adapter.apply {
+            addUsers(users)
+            notifyDataSetChanged()
+        }
+    }
+}
