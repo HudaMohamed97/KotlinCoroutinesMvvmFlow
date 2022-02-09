@@ -35,7 +35,7 @@ class MainViewModel(private val mainRepository: MainRepository, application: App
             val data = mainRepository.getVideoByUrl(url)
             emit(Resource.success(data = data))
             val fileName = url.substring(url.lastIndexOf("/") + 1)
-            data.body()?.let { writeResponseBodyToDisk(it) }
+            data.body()?.let { writeResponseBodyToDisk(it, fileName) }
 
         } catch (exception: Exception) {
             Log.i("error", "exception   " + exception.message)
@@ -43,14 +43,14 @@ class MainViewModel(private val mainRepository: MainRepository, application: App
         }
     }
 
-    private fun writeResponseBodyToDisk(body: ResponseBody): Boolean {
+    private fun writeResponseBodyToDisk(body: ResponseBody, fileName: String): Boolean {
         return try {
             // todo change the file location/name according to your needs
             val path =
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 
             val futureStudioIconFile =
-                File(path, "Icon.pdf")
+                File(path, fileName)
             var inputStream: InputStream? = null
             var outputStream: OutputStream? = null
             try {
